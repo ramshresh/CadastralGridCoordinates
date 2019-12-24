@@ -5,7 +5,7 @@ import os, arcpy
 arcpy.env.workspace = r"C:\LandUseProject\CadastralGridCalculator\output"
 arcpy.env.overwriteOutput = True
 
-def get_four_corners(sheetno):
+def get_four_corners(sheetno, proj_cm):
     C6 = sheetno #"0670101"
     # print "C6 = "+C6
     # IF3 = IF(AND((LEFT(C6,3))/1<181,(LEFT(C6,3)/1>0)),LEFT(C6,3),"Error")
@@ -90,65 +90,37 @@ def get_four_corners(sheetno):
         else:
             II5 = 0
     ##print [IF5, IG5, IH5, II5]
-    """
-    IK5 = =IF(AND(IF5>60,IF5<121),
-                (IF(((MOD((IF5/6),1))*300000)=0,
-                    300000,
-                    ((MOD((IF5/6),1))*300000))+300000),
-                (IF(((MOD((IF5/6),1))*300000)=0,
-                  300000,
-                  ((MOD((IF5/6),1))*300000)
-                )
-               )
-              )
-    """
-    if IF5 >= 61 and IF5 <=120:
-        if (float(IF5)/float(6) % 1)*300000 == 0:
-            IK5 = 300000
+
+    def get_constants(cm):
+        if cm == 81:
+            return [[600000,300000],[900000,600000],[1200000,900000]]
+        
+        if cm == 84:
+            return [[300000, 0], [600000,300000],[900000,600000]]
+
+        if cm == 87:
+            return [[0,-300000],[300000,0], [600000,300000]]
+
+    cnst = get_constants(proj_cm); 
+        
+    if IF5 > 0 and IF5 < 61:
+        if ((float(IF5)/float(6) % 1)) == 0:
+            IL5 = cnst[0][0]
         else:
-            IK5 = round(((float(IF5)/float(6) % 1)*300000) + 300000,4)
-    else:
+            IL5 = round(((float(IF5)/float(6) % 1)) * 300000+cnst[0][1],4)
+    elif IF5 > 60 and IF5 < 121:
+        if (float(IF5)/float(6) % 1)  == 0:
+            print (IF5/6)%1
+            print float(IF5)/float(6)
+            IL5 = cnst[1][0]
+        else:
+            IL5 = round(((float(IF5)/float(6) % 1)) * 300000 + cnst[1][1],4)
+    elif IF5 > 120 and IF5 < 181:
         if ((float(IF5)/float(6) % 1)*300000) == 0:
-            IK5 = 300000
+            IL5 = cnst[2][0]
         else:
-            IK5 = round(((float(IF5)/float(6) % 1)*300000),4)
-    """
-    IJ5 = IF(IF5>120,
-             (IF(((MOD((IF5/6),1))*300000)=0,
-                 300000,
-                 ((MOD((IF5/6),1))*300000))+600000),
-             (IF(((MOD((IF5/6),1))*300000)=0,
-                 300000,
-                 ((MOD((IF5/6),1))*300000))
-              )
-             )
-    """
-
-    if IF5 >= 121:
-        if (float(IF5)/float(6) % 1)*300000 == 0:
-            IJ5 = 300000
-        else:
-            IJ5 = round((float(IF5)/float(6) % 1)*300000 + 600000,4)
-    else:
-        if (float(IF5)/float(6) % 1)*300000 == 0:
-            IJ5 = 300000
-        else:
-            IJ5 = round((float(IF5)/float(6) % 1)*300000,4)
+            IL5 = round(((float(IF5)/float(6) % 1)) * 300000 + cnst[2][1],4)
             
-    ##print [round(IJ5,4), round(IK5,4)]
-
-    """
-    IL5 = =IF(IF5= 0/1,0,IF(AND(IF5>60,IF5<121),IK5,IJ5))
-    """
-
-    if IF5 == 0:
-        IL5 = 0
-    else:
-        if IF5>=61 and IF5 <=120:
-            IL5 = IK5
-        else:
-            IL5 = IJ5
-
     """
     IM5 = =IF(IF5>120,IF5-120,IF5)
     """
@@ -284,6 +256,8 @@ def get_four_corners(sheetno):
 
     return [Left_Top_XY,Left_Bottom_XY ,Right_Bottom_XY, Right_Top_XY]
 
+
+
 #print get_four_corners('0030104')
 
 
@@ -302,7 +276,7 @@ result = arcpy.management.CreateFeatureclass(
 start = time.clock() 
 fc = arcpy.CreateFeatureclass_management(
     r"C:\LandUseProject\CadastralGridCalculator\output",
-    r"grid_generated.shp", "POLYGON",
+    r"grid_generated_around_airport_cm81.shp", "POLYGON",
     )
 end = time.clock()
 arcpy.AddMessage("Create Feature Class %.3f" % (end - start))
@@ -317,19 +291,28 @@ arcpy.DeleteField_management(fc, "Id")
 end = time.clock()  
 arcpy.AddMessage("Delete Id Field %.3f" % (end - start))
 
-coordinates = [(316250.0, 3235000.0),
-               (316250.0, 3233750.0),
-               (317500.0, 3233750.0),
-               (317500.0, 3235000.0)
-               ]
 
+            
+
+#majorGrids = ['102']
 majorGrids = ['024','030', '079', '085']
+# majorGrids = ['001', '002', '003', '004', '005', '006', '061', '062','063', '064','065', '066', '121', '122','123', '124','125', '126']
+#majorGrids = ['030']
+"""
+majorGrids = ['001','002', '003', '004', '005', '006',
+              '061', '062', '063', '064', '065', '066',
+              '121', '122', '123', '124', '125', '126'
+              ]
+"""
 
 for mg in majorGrids:
+    #for g2500 in ['0001']:
     for g2500 in range(1,1601):
         sheetnumber = str(mg)+ str(g2500).rjust(4, '0')
+        print sheetnumber
         #print str(mg)+ str(g2500).rjust(4, '0')
-        coordinates = get_four_corners(sheetnumber)
+        coordinates = get_four_corners(sheetnumber, 81)
+        print coordinates
         start = time.clock()  
         # Write feature to new feature class
         with arcpy.da.InsertCursor(fc, ['SHAPE@','GRID_NO']) as cursor:
