@@ -3,6 +3,8 @@
 # Author:       Curtis Price, cprice@usgs.gov  
 # Created:      09/17/2013 11:49:25 AM  
 # Environment:  ArcGIS 10.x  
+# Source: Shift:  https://arcpy.wordpress.com/2012/11/15/shifting-features/
+# Source: Rotate: https://community.esri.com/thread/48226
 # -------------------------------------------------------------------  
   
 import os  
