@@ -13,6 +13,9 @@ import traceback
 import arcpy  
 from arcpy import env  
 
+env.workspace = r'C:\GRID_EXPERIMENT\rotate_move'
+env.overwriteOutput = True
+
 def shift_features(in_features, x_shift=None, y_shift=None):
     """
     Shifts features by an x and/or y value. The shift values are in
