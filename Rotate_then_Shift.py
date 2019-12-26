@@ -5,6 +5,7 @@
 # Environment:  ArcGIS 10.x  
 # Source: Shift:  https://arcpy.wordpress.com/2012/11/15/shifting-features/
 # Source: Rotate: https://community.esri.com/thread/48226
+# Source Describe: https://pro.arcgis.com/en/pro-app/arcpy/functions/dataset-properties.htm
 # -------------------------------------------------------------------  
   
 import os  
